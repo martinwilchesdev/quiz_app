@@ -3,6 +3,7 @@ package com.example.quizapp.ui
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
@@ -30,8 +31,13 @@ class QuestionsActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var checkButton: Button
 
     private lateinit var questionList: MutableList<Question>
-    private val currentPosition = 1
-    private var selectedOptionPosition = 0
+    private lateinit var currentQuestion: Question
+    private lateinit var correctAnswer: TextView
+
+    private var optionsList = mutableListOf<TextView>()
+    private var counterQuestions = 1
+    private var currentOptionId = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
@@ -43,9 +49,9 @@ class QuestionsActivity : AppCompatActivity(), View.OnClickListener {
             insets
         }
 
-        progressBar = findViewById(R.id.progress_bar)
-        textViewProgress = findViewById(R.id.text_view_progress)
         textViewQuestion = findViewById(R.id.question_text_view)
+        textViewProgress = findViewById(R.id.text_view_progress)
+        progressBar = findViewById(R.id.progress_bar)
         flagImage = findViewById(R.id.image_flag)
 
         textViewQuestionOne = findViewById(R.id.text_view_option_one)
@@ -63,22 +69,30 @@ class QuestionsActivity : AppCompatActivity(), View.OnClickListener {
 
         questionList = Constants.getQuestion()
 
-        setQuestion()
+        showNextQuestion()
     }
 
-    private fun setQuestion() {
-        val question = questionList[currentPosition]
-        flagImage.setImageResource(question.image)
-        progressBar.progress = currentPosition
-        textViewProgress.text = "$currentPosition/${progressBar.max}"
-        textViewQuestion.text = question.question
+    private fun showNextQuestion() {
+        currentQuestion = questionList[counterQuestions - 1]
 
-        textViewQuestionOne.text = question.optionOne
-        textViewQuestionTwo.text = question.optionTwo
-        textViewQuestionThree.text = question.optionThree
-        textViewQuestionFour.text = question.optionFour
+        textViewProgress.text = "$counterQuestions/${progressBar.max}"
+        textViewQuestion.text = currentQuestion.question
+        flagImage.setImageResource(currentQuestion.image)
+        progressBar.progress = counterQuestions
 
-        if (currentPosition == questionList.size) {
+        textViewQuestionOne.text = currentQuestion.optionOne
+        textViewQuestionTwo.text = currentQuestion.optionTwo
+        textViewQuestionThree.text = currentQuestion.optionThree
+        textViewQuestionFour.text = currentQuestion.optionFour
+
+        optionsList.add(textViewQuestionOne)
+        optionsList.add(textViewQuestionTwo)
+        optionsList.add(textViewQuestionThree)
+        optionsList.add(textViewQuestionFour)
+
+        correctAnswer = optionsList[currentQuestion.correctAnswer - 1]
+
+        if (counterQuestions == questionList.size) {
             checkButton.text = "FINISH"
         } else {
             checkButton.text = "CHECK"
@@ -100,34 +114,94 @@ class QuestionsActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
-    private fun selectedOption(textView: TextView, selectedOptionNumber: Int) {
+    private fun selectedOption(textView: TextView) {
         resetOptions()
 
-        selectedOptionPosition = selectedOptionNumber
+        currentOptionId = textView.id
 
+        textView.background = ContextCompat.getDrawable(this, R.drawable.selected_option_border_bg)
         textView.setTextColor(Color.parseColor("#363A43"))
         textView.setTypeface(textView.typeface, Typeface.BOLD)
-        textView.background = ContextCompat.getDrawable(this, R.drawable.selected_option_border_bg)
     }
 
     override fun onClick(v: View?) {
-        println("Id: ${v?.id}")
-        when(v?.id) {
-            R.id.text_view_option_one -> {
-                selectedOption(textViewQuestionOne, textViewQuestionOne.id)
+        when (v?.id) {
+            textViewQuestionOne.id -> {
+                selectedOption(textViewQuestionOne)
             }
-            R.id.text_view_option_two -> {
-                selectedOption(textViewQuestionTwo, textViewQuestionTwo.id)
-            }
-            R.id.text_view_option_three -> {
-                selectedOption(textViewQuestionThree, textViewQuestionThree.id)
-            }
-            R.id.text_view_option_four -> {
-                selectedOption(textViewQuestionFour, textViewQuestionFour.id)
-            }
-            R.id.button_check -> {
 
+            textViewQuestionTwo.id -> {
+                selectedOption(textViewQuestionTwo)
+            }
+
+            textViewQuestionThree.id -> {
+                selectedOption(textViewQuestionThree)
+            }
+
+            textViewQuestionFour.id -> {
+                selectedOption(textViewQuestionFour)
+            }
+
+            checkButton.id -> {
+                if (checkButton.text == "NEXT" || checkButton.text == "FINISH") {
+                    counterQuestions++
+                    resetOptions()
+                    showNextQuestion()
+                } else {
+                    checkAnswer()
+                }
             }
         }
+    }
+
+    private fun checkAnswer() {
+        if (correctAnswer.id == currentOptionId) {
+            when (currentOptionId) {
+                textViewQuestionOne.id -> {
+                    textViewQuestionOne.background =
+                        getDrawable(R.drawable.correct_option_border_bg)
+                }
+
+                textViewQuestionTwo.id -> {
+                    textViewQuestionTwo.background =
+                        getDrawable(R.drawable.correct_option_border_bg)
+                }
+
+                textViewQuestionThree.id -> {
+                    textViewQuestionThree.background =
+                        getDrawable(R.drawable.correct_option_border_bg)
+                }
+
+                textViewQuestionFour.id -> {
+                    textViewQuestionFour.background =
+                        getDrawable(R.drawable.correct_option_border_bg)
+                }
+            }
+        } else {
+            when (currentOptionId) {
+                textViewQuestionOne.id -> {
+                    textViewQuestionOne.background =
+                        getDrawable(R.drawable.wrong_option_border_bg)
+                }
+
+                textViewQuestionTwo.id -> {
+                    textViewQuestionTwo.background =
+                        getDrawable(R.drawable.wrong_option_border_bg)
+                }
+
+                textViewQuestionThree.id -> {
+                    textViewQuestionThree.background =
+                        getDrawable(R.drawable.wrong_option_border_bg)
+                }
+
+                textViewQuestionFour.id -> {
+                    textViewQuestionFour.background =
+                        getDrawable(R.drawable.wrong_option_border_bg)
+                }
+            }
+            correctAnswer.background = getDrawable(R.drawable.correct_option_border_bg)
+        }
+
+        checkButton.text = "NEXT"
     }
 }

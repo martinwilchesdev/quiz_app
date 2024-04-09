@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.quizapp.ui.QuestionsActivity
+import com.example.quizapp.utils.Constants
 
 class MainActivity : AppCompatActivity() {
     private lateinit var startButton: Button
@@ -27,10 +28,11 @@ class MainActivity : AppCompatActivity() {
         startButton = findViewById(R.id.button_start)
         userName = findViewById(R.id.user_name)
 
-
         startButton.setOnClickListener {
             if (userName.text.isNotEmpty()) {
                 Intent(this@MainActivity, QuestionsActivity::class.java).also {
+                    it.putExtra(Constants.USER_NAME, userName.text.toString())
+
                     startActivity(it)
                     finish()
                 }

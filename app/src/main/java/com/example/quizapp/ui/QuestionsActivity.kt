@@ -1,5 +1,6 @@
 package com.example.quizapp.ui
 
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
@@ -9,6 +10,7 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -33,10 +35,12 @@ class QuestionsActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var questionList: MutableList<Question>
     private lateinit var currentQuestion: Question
     private lateinit var correctAnswer: TextView
+    private lateinit var userName: String
 
     private var optionsList = mutableListOf<TextView>()
     private var counterQuestions = 1
     private var currentOptionId = 0
+    private var scoreResult = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -70,9 +74,15 @@ class QuestionsActivity : AppCompatActivity(), View.OnClickListener {
         questionList = Constants.getQuestion()
 
         showNextQuestion()
+
+        if (intent.hasExtra(Constants.USER_NAME)) {
+            userName = intent.getStringExtra(Constants.USER_NAME)!!
+        }
     }
 
     private fun showNextQuestion() {
+        resetOptions()
+
         currentQuestion = questionList[counterQuestions - 1]
 
         textViewProgress.text = "$counterQuestions/${progressBar.max}"
@@ -112,6 +122,8 @@ class QuestionsActivity : AppCompatActivity(), View.OnClickListener {
             option.typeface = Typeface.DEFAULT
             option.background = ContextCompat.getDrawable(this, R.drawable.default_option_border_bg)
         }
+
+        currentOptionId = 0
     }
 
     private fun selectedOption(textView: TextView) {
@@ -143,9 +155,22 @@ class QuestionsActivity : AppCompatActivity(), View.OnClickListener {
             }
 
             checkButton.id -> {
-                if (checkButton.text == "NEXT" || checkButton.text == "FINISH") {
+                if (currentOptionId == 0) {
+                    Toast.makeText(
+                        this@QuestionsActivity,
+                        "Select a valid option",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else if (checkButton.text == "FINISH") {
+                    Intent(this@QuestionsActivity, ResultActivity::class.java).also {
+                        it.putExtra(Constants.TOTAL_QUESTIONS, counterQuestions.toString())
+                        it.putExtra(Constants.SCORE, scoreResult.toString())
+                        it.putExtra(Constants.USER_NAME, userName)
+                        startActivity(it)
+                        finish()
+                    }
+                } else if (checkButton.text == "NEXT") {
                     counterQuestions++
-                    resetOptions()
                     showNextQuestion()
                 } else {
                     checkAnswer()
@@ -156,52 +181,38 @@ class QuestionsActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun checkAnswer() {
         if (correctAnswer.id == currentOptionId) {
-            when (currentOptionId) {
-                textViewQuestionOne.id -> {
-                    textViewQuestionOne.background =
-                        getDrawable(R.drawable.correct_option_border_bg)
-                }
-
-                textViewQuestionTwo.id -> {
-                    textViewQuestionTwo.background =
-                        getDrawable(R.drawable.correct_option_border_bg)
-                }
-
-                textViewQuestionThree.id -> {
-                    textViewQuestionThree.background =
-                        getDrawable(R.drawable.correct_option_border_bg)
-                }
-
-                textViewQuestionFour.id -> {
-                    textViewQuestionFour.background =
-                        getDrawable(R.drawable.correct_option_border_bg)
-                }
-            }
+            scoreResult++
+            highlightAnswer(R.drawable.correct_option_border_bg)
         } else {
-            when (currentOptionId) {
-                textViewQuestionOne.id -> {
-                    textViewQuestionOne.background =
-                        getDrawable(R.drawable.wrong_option_border_bg)
-                }
+            highlightAnswer(R.drawable.wrong_option_border_bg)
 
-                textViewQuestionTwo.id -> {
-                    textViewQuestionTwo.background =
-                        getDrawable(R.drawable.wrong_option_border_bg)
-                }
-
-                textViewQuestionThree.id -> {
-                    textViewQuestionThree.background =
-                        getDrawable(R.drawable.wrong_option_border_bg)
-                }
-
-                textViewQuestionFour.id -> {
-                    textViewQuestionFour.background =
-                        getDrawable(R.drawable.wrong_option_border_bg)
-                }
-            }
             correctAnswer.background = getDrawable(R.drawable.correct_option_border_bg)
         }
 
         checkButton.text = "NEXT"
+    }
+
+    private fun highlightAnswer(answer: Int) {
+        when (currentOptionId) {
+            textViewQuestionOne.id -> {
+                textViewQuestionOne.background =
+                    getDrawable(answer)
+            }
+
+            textViewQuestionTwo.id -> {
+                textViewQuestionTwo.background =
+                    getDrawable(answer)
+            }
+
+            textViewQuestionThree.id -> {
+                textViewQuestionThree.background =
+                    getDrawable(answer)
+            }
+
+            textViewQuestionFour.id -> {
+                textViewQuestionFour.background =
+                    getDrawable(answer)
+            }
+        }
     }
 }
